@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import AppShell from './layouts/AppShell.jsx';
 import FeatureCard from './components/FeatureCard.jsx';
+import EventWorkspace, { useEventView } from './features/events/EventWorkspace.jsx';
 import { modules } from './data/modules.js';
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export default function App() {
+  const eventView = useEventView();
   const [api, setApi] = useState({ type: 'loading', message: 'Checking API...' });
 
   const checkApi = useCallback(async () => {
@@ -21,6 +23,19 @@ export default function App() {
   }, []);
 
   useEffect(() => { void checkApi(); }, [checkApi]);
+
+  useEffect(() => {
+    if (eventView) {
+      window.scrollTo(0, 0);
+    } else {
+      const anchor = window.location.hash.slice(1);
+      if (['top', 'modules', 'setup'].includes(anchor)) document.getElementById(anchor)?.scrollIntoView();
+    }
+  }, [eventView]);
+
+  if (eventView) {
+    return <AppShell eventView={eventView}><EventWorkspace view={eventView} /></AppShell>;
+  }
 
   return (
     <AppShell>
@@ -46,6 +61,10 @@ export default function App() {
         <section id="modules" className="modules">
           <span className="eyebrow">PROJECT OWNERSHIP</span>
           <h2>Our 12 feature modules</h2>
+          <nav className="event-entry" aria-label="Event proposals">
+            <a href="#/proposals">My proposals</a>
+            <a href="#/approval-queue">Admin approval queue</a>
+          </nav>
           <p className="muted">All features below are placeholders until implemented, reviewed and tested.</p>
           {modules.map((group) => (
             <section className="group" key={group.owner}>

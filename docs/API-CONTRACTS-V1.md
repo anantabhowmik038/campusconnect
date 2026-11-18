@@ -120,12 +120,12 @@ Server derives `created_by` from authenticated identity and checks officer's per
 
 `PATCH /api/events/:eventId/review` (campus admin):
 ```json
-{ "decision": "approved", "review_note": "Approved for publication" }
+{ "decision": "approved", "review_note": "Approved for publication", "submission_version": 2 }
 ```
 
 Response: `{ "data": { "id": "<uuid>", "status": "approved" } }`.
 
-`decision` must be `approved` or `rejected`; server records `reviewed_by` and `reviewed_at`. Publishing is a separate proposed action until venue policy is agreed.
+`decision` must be `approved` or `rejected`. Rejection requires a nonempty `review_note`. Send the integer `submission_version` from the pending queue row when the review was opened. Each submission or resubmission advances this version. If the proposal is pending with a different version, the server returns `409 STALE_SUBMISSION` and leaves it unchanged. Reload the queue before reviewing again. A successful decision records `reviewed_by` and `reviewed_at`. Publishing is a separate proposed action until venue policy is agreed.
 
 ### F05 — Published event search
 
