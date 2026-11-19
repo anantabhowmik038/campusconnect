@@ -2,10 +2,19 @@ import { useCallback, useEffect, useState } from 'react';
 import AppShell from './layouts/AppShell.jsx';
 import FeatureCard from './components/FeatureCard.jsx';
 import { modules } from './data/modules.js';
+import PublicEvents from './features/events/PublicEvents.jsx';
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export default function App() {
+  const eventPath = /^\/events(?:\/([^/]+))?\/?$/.exec(window.location.pathname);
+  if (eventPath) {
+    return <AppShell eventsActive><PublicEvents eventId={eventPath[1]} /></AppShell>;
+  }
+  return <Foundation />;
+}
+
+function Foundation() {
   const [api, setApi] = useState({ type: 'loading', message: 'Checking API...' });
 
   const checkApi = useCallback(async () => {

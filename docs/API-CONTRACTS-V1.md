@@ -44,7 +44,7 @@
 | F04 | POST | `/api/events/:eventId/publish` | Authorized officer/admin; policy TBD | Publish approved event |
 | F04 | GET | `/api/events/pending` | Campus admin | Approval queue |
 | F05 | GET | `/api/events` | Public | Published events with filters |
-| F05 | GET | `/api/events/:eventId` | Public for published events; authorized otherwise | Event details |
+| F05 | GET | `/api/events/:eventId` | Public, published events only | Event details |
 | F06 | POST | `/api/events/:eventId/registrations` | Student | Register or waitlist |
 | F06 | GET | `/api/events/:eventId/registrations/me` | Authenticated | Own registration status |
 | F06 | DELETE | `/api/events/:eventId/registrations/me` | Authenticated | Cancel registration |
@@ -136,7 +136,21 @@ Response: `{ "data": { "id": "<uuid>", "status": "approved" } }`.
 { "data": [{ "id": "<uuid>", "title": "Programming Workshop", "status": "published", "capacity": 80 }], "pagination": { "page": 1, "limit": 20, "total": 1 } }
 ```
 
-Default public results contain only `published` events; private draft/review routes enforce authentication.
+Both F05 reads return only `published` events for every caller. The list returns
+`id`, `title`, `category`, `image_url`, `start_time`, `end_time`, `capacity`,
+`status`, `club_id`, and `club_name`. Detail returns `{ "data": { ... } }`
+with the same fields plus `description`. A valid UUID for an unknown or
+nonpublic event returns the same `404 EVENT_NOT_FOUND` response.
+
+- `search` matches a literal case-insensitive substring of the title or description (up to 120 characters).
+- `category` matches the event category case-insensitively (up to 80 characters).
+- `from` and `to` are optional inclusive `YYYY-MM-DD` dates for the event start in `Asia/Dhaka`.
+- `page` defaults to 1 and `limit` to 20. The maximum limit is 100. An out-of-range page returns an empty list and the filtered total.
+- `sort` accepts `start_asc` (default) or `start_desc`. Event UUID breaks ties in the same direction.
+
+Malformed UUIDs, invalid list values, unsupported query parameters, and
+repeated parameters return `400 VALIDATION_ERROR`. Detail accepts no query
+parameters. F04 proposal and review endpoints use separate protected routes.
 
 ### F06 — Registration and waitlist
 
