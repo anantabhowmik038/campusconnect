@@ -29,3 +29,50 @@ test('Unrecognized API routes return HTTP 404', async () => {
   const response = await fetch(`${baseUrl}/api/not-found`);
   assert.equal(response.status, 404);
 });
+<<<<<<< Updated upstream
+=======
+
+test('F10 rejects malformed announcement filters before database access', async () => {
+  const response = await fetch(`${baseUrl}/api/announcements?clubId=not-a-uuid`);
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'clubId must be a valid UUID.' });
+});
+
+test('F10 requires a user identity for notification reads', async () => {
+  const response = await fetch(`${baseUrl}/api/notifications`);
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'X-User-Id must be a valid UUID.' });
+});
+
+test('F10 validates targeted notification recipients', async () => {
+  const response = await fetch(`${baseUrl}/api/notifications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-User-Id': 'not-a-uuid' },
+    body: JSON.stringify({ userId: 'not-a-uuid' }),
+  });
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'X-User-Id must be a valid UUID.' });
+});
+
+test('F11 validates feedback event identifiers', async () => {
+  const response = await fetch(`${baseUrl}/api/feedback/events/not-a-uuid`);
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'eventId must be a valid UUID.' });
+});
+
+test('F11 validates feedback ratings before database access', async () => {
+  const response = await fetch(
+    `${baseUrl}/api/feedback/events/00000000-0000-4000-8000-000000000000`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Id': '00000000-0000-4000-8000-000000000001',
+      },
+      body: JSON.stringify({ rating: 6 }),
+    },
+  );
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'rating must be an integer from 1 to 5.' });
+});
+>>>>>>> Stashed changes
