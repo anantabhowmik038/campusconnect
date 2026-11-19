@@ -16,6 +16,17 @@ This document is not an approved schema. Discuss and approve it in Discord befor
 ## Foundation API endpoints (actually implemented)
 - `GET /api/health` → HTTP 200, basic server status
 - `GET /api/health/database` → HTTP 200/503, PostgreSQL connection status
+- `GET /api/announcements` → HTTP 200, latest announcements; optional `clubId` or `eventId` filters
+- `POST /api/announcements` → HTTP 201, creates an announcement and notifies approved club members or registered event users
+- `GET /api/notifications` → HTTP 200, current user's notifications; requires temporary `X-User-Id` integration header
+- `POST /api/notifications` → HTTP 201, direct notification for an active user; campus administrator plus `X-User-Id` required
+- `GET /api/notifications/unread-count` → HTTP 200, current user's unread count; requires `X-User-Id`
+- `PATCH /api/notifications/:notificationId/read` → HTTP 200, marks one notification read; requires `X-User-Id`
+- `PATCH /api/notifications/read-all` → HTTP 200, marks all current-user notifications read; requires `X-User-Id`
+
+The `X-User-Id` header is an interim integration boundary until F01 authentication
+is approved and implemented. It must be replaced by authenticated request
+context before production use.
 
 ## Items to finalize before feature development
 1. Shared PostgreSQL schema: users, clubs, members, events, proposals, registrations, attendance, venues, shifts, notifications, feedback.

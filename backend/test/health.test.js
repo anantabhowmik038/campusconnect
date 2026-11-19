@@ -29,3 +29,25 @@ test('Unrecognized API routes return HTTP 404', async () => {
   const response = await fetch(`${baseUrl}/api/not-found`);
   assert.equal(response.status, 404);
 });
+
+test('F10 rejects malformed announcement filters before database access', async () => {
+  const response = await fetch(`${baseUrl}/api/announcements?clubId=not-a-uuid`);
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'clubId must be a valid UUID.' });
+});
+
+test('F10 requires a user identity for notification reads', async () => {
+  const response = await fetch(`${baseUrl}/api/notifications`);
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'X-User-Id must be a valid UUID.' });
+});
+
+test('F10 validates targeted notification recipients', async () => {
+  const response = await fetch(`${baseUrl}/api/notifications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-User-Id': 'not-a-uuid' },
+    body: JSON.stringify({ userId: 'not-a-uuid' }),
+  });
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'X-User-Id must be a valid UUID.' });
+});

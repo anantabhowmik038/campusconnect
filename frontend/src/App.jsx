@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import AppShell from './layouts/AppShell.jsx';
 import FeatureCard from './components/FeatureCard.jsx';
+import F10Workspace from './features/communication/F10Workspace.jsx';
 import { modules } from './data/modules.js';
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -56,6 +57,8 @@ export default function App() {
             </section>
           ))}
         </section>
+
+        <F10Workspace />
 
         <section id="setup" className="setup">
           <span className="eyebrow">NEXT STEPS</span><h2>Developer handoff</h2>

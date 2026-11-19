@@ -19,3 +19,6 @@ npm-debug.log*
 .DS_Store
 .vscode/
 Thumbs.db
+
+# Local feature planning notes
+README_FEATURES.md
