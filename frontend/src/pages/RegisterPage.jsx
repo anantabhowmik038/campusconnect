@@ -5,7 +5,6 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('student');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -17,7 +16,7 @@ export default function RegisterPage() {
       const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ full_name: fullName, email, password, role }),
+        body: JSON.stringify({ full_name: fullName, email, password }),
       });
 
       const data = await response.json();
@@ -71,19 +70,10 @@ export default function RegisterPage() {
             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
           />
         </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label>Role:</label><br />
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-          >
-            <option value="student">Student</option>
-            <option value="club_officer">Club Officer</option>
-            <option value="campus_admin">Campus Administrator</option>
-          </select>
-        </div>
-        <button type="submit" style={{ width: '100%', padding: '10px', background: '#28a745', color: '#white', border: 'none', borderRadius: '4px' }}>
+        <button
+          type="submit"
+          style={{ width: '100%', padding: '10px', background: '#28a745', color: '#fff', border: 'none', borderRadius: '4px' }}
+        >
           Register
         </button>
       </form>

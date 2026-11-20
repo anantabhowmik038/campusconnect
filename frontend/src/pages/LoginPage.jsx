@@ -60,7 +60,10 @@ export default function LoginPage() {
             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
           />
         </div>
-        <button type="submit" style={{ width: '100%', padding: '10px', background: '#007bff', color: '#white', border: 'none', borderRadius: '4px' }}>
+        <button
+          type="submit"
+          style={{ width: '100%', padding: '10px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '4px' }}
+        >
           Login
         </button>
       </form>
