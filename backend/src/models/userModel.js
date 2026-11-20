@@ -1,4 +1,4 @@
-import { pool } from '../config/database.js';
+import { getDatabasePool } from '../config/database.js';
 
 export const userModel = {
   async findByEmail(email) {
