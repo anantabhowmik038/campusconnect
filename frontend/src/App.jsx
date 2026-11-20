@@ -5,6 +5,7 @@ import FeatureCard from './components/FeatureCard.jsx';
 import { modules } from './data/modules.js';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
+import ClubsPage from './pages/ClubsPage.jsx';
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -31,14 +32,17 @@ function HomePage() {
         <span className="eyebrow">THE SHARED STARTING POINT</span>
         <h1>One campus. Every connection.</h1>
         <p>CampusConnect brings campus events, student clubs, registration and event operations into one unified platform.</p>
-        
-        {/* Navigation Buttons for Login and Register */}
-        <div style={{ marginTop: '20px', display: 'flex', gap: '15px', justifyContent: 'center' }}>
+
+        {/* Navigation Buttons for Login, Register, and Club Directory */}
+        <div style={{ marginTop: '20px', display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link to="/login" style={{ padding: '10px 20px', background: '#007bff', color: '#fff', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold' }}>
             Login
           </Link>
           <Link to="/register" style={{ padding: '10px 20px', background: '#28a745', color: '#fff', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold' }}>
             Register
+          </Link>
+          <Link to="/clubs" style={{ padding: '10px 20px', background: '#495057', color: '#fff', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold' }}>
+            Browse Clubs
           </Link>
         </div>
 
@@ -87,6 +91,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/clubs" element={<ClubsPage />} />
       </Routes>
     </AppShell>
   );

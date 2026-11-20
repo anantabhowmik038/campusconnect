@@ -1,7 +1,16 @@
 import { getDatabasePool } from '../config/database.js';
 
+function getPoolOrThrow() {
+  const pool = getDatabasePool();
+  if (!pool) {
+    throw new Error('DATABASE_URL is not configured.');
+  }
+  return pool;
+}
+
 export const userModel = {
   async findByEmail(email) {
+    const pool = getPoolOrThrow();
     const query = `
       SELECT id, full_name, email, password_hash, role, is_active, created_at
       FROM users
@@ -13,6 +22,7 @@ export const userModel = {
   },
 
   async findById(id) {
+    const pool = getPoolOrThrow();
     const query = `
       SELECT id, full_name, email, role, is_active, created_at
       FROM users
@@ -24,6 +34,7 @@ export const userModel = {
   },
 
   async createUser(fullName, email, passwordHash, role = 'student') {
+    const pool = getPoolOrThrow();
     const query = `
       INSERT INTO users (full_name, email, password_hash, role)
       VALUES ($1, $2, $3, $4)
