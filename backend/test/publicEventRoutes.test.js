@@ -30,6 +30,18 @@ test('the normal app rejects invalid public event requests before accessing Post
   }
 });
 
+test('unknown query parameters and repeated supported filters have distinct errors', async () => {
+  for (const [query, message] of [
+    ['?utm_source=chatgpt.com', 'Use only supported event filters.'],
+    ['?search=robotics&utm_source=chatgpt.com', 'Use only supported event filters.'],
+    ['?search=a&search=b', 'Use each supported filter at most once.'],
+  ]) {
+    const response = await fetch(url + query);
+    assert.equal(response.status, 400, query);
+    assert.deepEqual(await response.json(), { error: { code: 'VALIDATION_ERROR', message } });
+  }
+});
+
 test('the combined app protects proposal creation under the shared events path', async () => {
   const response = await fetch(url, { method: 'POST' });
   assert.equal(response.status, 401);
@@ -53,9 +65,9 @@ test('F05 rejects oversize queries and validates parameters beyond the framework
   const invalid = [
     ['', '?search=' + 'x'.repeat(4096), /4096 bytes/],
     ['', '?search=first' + ignoredSeparators + 'search=last', /each supported filter at most once/],
-    ['', '?search=first' + ignoredSeparators + 'status=draft', /each supported filter at most once/],
+    ['', '?search=first' + ignoredSeparators + 'status=draft', /only supported event filters/],
     ['', '?search=first&%73earch=last', /each supported filter at most once/],
-    ['', '??search=first', /each supported filter at most once/],
+    ['', '??search=first', /only supported event filters/],
     [id, '?search=' + 'x'.repeat(4096), /4096 bytes/],
   ];
   for (const [path, query, message] of invalid) {

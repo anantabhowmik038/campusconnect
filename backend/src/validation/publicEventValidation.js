@@ -16,7 +16,8 @@ export function readPublicEventQuery(originalUrl) {
   }
   const query = Object.create(null);
   for (const [key, value] of new URLSearchParams('?' + raw)) {
-    if (!fields.has(key) || Object.hasOwn(query, key)) {
+    if (!fields.has(key)) return { error: 'Use only supported event filters.' };
+    if (Object.hasOwn(query, key)) {
       return { error: 'Use each supported filter at most once.' };
     }
     query[key] = value;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import EventCard from './EventCard.jsx';
 import EventFilters from './EventFilters.jsx';
-import { requestPublicEvents } from './publicEventApi.js';
+import { getEventFilterQuery, requestPublicEvents } from './publicEventApi.js';
 import './eventDiscovery.css';
 
 function EventPagination({ pagination, search }) {
@@ -24,7 +24,7 @@ function EventPagination({ pagination, search }) {
 
 export default function PublicEvents({ eventId }) {
   const search = window.location.search;
-  const path = eventId ? '/' + eventId : search;
+  const path = eventId ? '/' + eventId : getEventFilterQuery(search);
   const [result, setResult] = useState({ loading: true });
   const [attempt, setAttempt] = useState(0);
 
