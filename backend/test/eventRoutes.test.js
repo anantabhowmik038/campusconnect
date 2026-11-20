@@ -23,19 +23,29 @@ test('the application fails closed on all six F04 routes', async () => {
   for (const [method, path] of [
     ['POST', ''], ['PATCH', '/' + id], ['POST', '/' + id + '/submit'],
     ['GET', '/proposals'], ['GET', '/pending'], ['PATCH', '/' + id + '/review'],
+    ['GET', '/PROPOSALS'], ['GET', '/PENDING'],
+    ['GET', '/proposals/'], ['GET', '/pending/'],
+    ['GET', '/PROPOSALS/'], ['GET', '/PENDING/'],
   ]) {
     const response = await fetch(baseUrl + path, {
       method,
-      headers: { Authorization: 'Bearer unverified', 'X-Role': 'campus_admin', 'X-User-Id': id },
+      headers: {
+        Authorization: 'Bearer unverified',
+        'X-Role': 'campus_admin',
+        'X-User-Id': id,
+        'Content-Type': 'application/json',
+      },
+      body: method === 'GET' ? undefined : '{malformed JSON',
     });
     assert.equal(response.status, 401, method + ' ' + path);
     assert.equal((await response.json()).error.code, 'UNAUTHENTICATED');
   }
 });
 
-test('F04 leaves public discovery, publishing and registration routes unimplemented', async () => {
-  for (const [method, path] of [['GET', ''], ['GET', '/event'], ['POST', '/event/publish'], ['POST', '/event/registrations']]) {
-    const response = await fetch(baseUrl + path, { method });
+test('the combined app leaves publishing and registration routes unimplemented', async () => {
+  const id = '12345678-1234-1234-1234-123456789abc';
+  for (const path of ['/' + id + '/publish', '/' + id + '/registrations']) {
+    const response = await fetch(baseUrl + path, { method: 'POST' });
     assert.equal(response.status, 404);
   }
 });
