@@ -13,7 +13,7 @@ async function request(path, options) {
 }
 
 export default function F11Workspace() {
-  const [userId, setUserId] = useState('');
+  const [authToken, setAuthToken] = useState('');
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState('');
   const [rating, setRating] = useState('5');
@@ -22,20 +22,20 @@ export default function F11Workspace() {
   const [status, setStatus] = useState({ type: '', message: '' });
 
   const loadEligibleEvents = useCallback(async () => {
-    if (!userId.trim()) {
+    if (!authToken.trim()) {
       setEvents([]);
       return;
     }
     try {
       const result = await request('/feedback/eligible-events', {
-        headers: { 'X-User-Id': userId.trim() },
+        headers: { Authorization: `Bearer ${authToken.trim()}` },
       });
       setEvents(result.events);
       setStatus({ type: 'success', message: 'Eligible events loaded.' });
     } catch (error) {
       setStatus({ type: 'error', message: error.message });
     }
-  }, [userId]);
+  }, [authToken]);
 
   const loadSummary = useCallback(async (eventId) => {
     if (!eventId) {
@@ -57,7 +57,7 @@ export default function F11Workspace() {
     try {
       await request(`/feedback/events/${selectedEvent}`, {
         method: 'POST',
-        headers: { 'X-User-Id': userId.trim() },
+        headers: { Authorization: `Bearer ${authToken.trim()}` },
         body: JSON.stringify({ rating: Number(rating), comment }),
       });
       setStatus({ type: 'success', message: 'Feedback saved.' });
@@ -76,8 +76,8 @@ export default function F11Workspace() {
       </div>
       <div className="feedback-grid">
         <div className="communication-card">
-          <label className="user-id-field">Current user ID
-            <input value={userId} onChange={(event) => setUserId(event.target.value)} placeholder="UUID from authentication" />
+          <label className="user-id-field">Bearer authentication token
+            <input type="password" value={authToken} onChange={(event) => setAuthToken(event.target.value)} placeholder="JWT token" />
           </label>
           <label className="user-id-field">Attended completed event
             <select value={selectedEvent} onChange={(event) => setSelectedEvent(event.target.value)}>
@@ -85,8 +85,8 @@ export default function F11Workspace() {
               {events.map((event) => <option value={event.id} key={event.id}>{event.title}{event.feedback_id ? ' (reviewed)' : ''}</option>)}
             </select>
           </label>
-          {!userId
-            ? <p className="empty-state">Enter your user ID to find events you attended.</p>
+          {!authToken
+            ? <p className="empty-state">Enter a bearer token to find events you attended.</p>
             : events.length === 0
               ? <p className="empty-state">No completed attended events are eligible for feedback.</p>
               : <form className="feedback-form" onSubmit={submitFeedback}>

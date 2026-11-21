@@ -5,12 +5,13 @@ import {
   postEventFeedback,
   removeFeedback,
 } from '../controllers/feedbackController.js';
+import { verifyToken } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
-router.get('/feedback/eligible-events', getEligibleEvents);
+router.get('/feedback/eligible-events', verifyToken, getEligibleEvents);
 router.get('/feedback/events/:eventId', getEventFeedback);
-router.post('/feedback/events/:eventId', postEventFeedback);
-router.delete('/feedback/:feedbackId', removeFeedback);
+router.post('/feedback/events/:eventId', verifyToken, postEventFeedback);
+router.delete('/feedback/:feedbackId', verifyToken, removeFeedback);
 
 export default router;

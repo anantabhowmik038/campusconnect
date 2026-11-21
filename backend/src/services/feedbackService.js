@@ -33,7 +33,8 @@ function validateComment(value) {
 }
 
 function getUserId(request) {
-  return requireUuid(request.get('x-user-id'), 'X-User-Id');
+  if (!request.user?.id) throw new ApiError(401, 'Authentication is required.');
+  return requireUuid(request.user.id, 'authenticated user ID');
 }
 
 async function requireActiveUser(pool, userId) {
