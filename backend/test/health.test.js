@@ -6,6 +6,7 @@ let server;
 let baseUrl;
 
 before(async () => {
+  process.env.JWT_SECRET = 'test-only-jwt-secret-at-least-32-characters';
   server = app.listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -36,18 +37,16 @@ test('F10 rejects malformed announcement filters before database access', async 
   assert.deepEqual(await response.json(), { error: 'clubId must be a valid UUID.' });
 });
 
-test('F10 requires a user identity for notification reads', async () => {
+test('F10 requires bearer authentication for notification reads', async () => {
   const response = await fetch(`${baseUrl}/api/notifications`);
-  assert.equal(response.status, 400);
-  assert.deepEqual(await response.json(), { error: 'X-User-Id must be a valid UUID.' });
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), { error: 'Authentication token is missing.' });
 });
 
-test('F10 validates targeted notification recipients', async () => {
+test('F10 rejects an invalid bearer token', async () => {
   const response = await fetch(`${baseUrl}/api/notifications`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-User-Id': 'not-a-uuid' },
-    body: JSON.stringify({ userId: 'not-a-uuid' }),
+    headers: { Authorization: 'Bearer invalid-token' },
   });
-  assert.equal(response.status, 400);
-  assert.deepEqual(await response.json(), { error: 'X-User-Id must be a valid UUID.' });
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), { error: 'Invalid or expired authentication token.' });
 });

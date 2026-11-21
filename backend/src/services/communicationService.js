@@ -26,7 +26,10 @@ function requireText(value, field, maxLength) {
 }
 
 function getUserId(request) {
-  return requireUuid(request.get('x-user-id'), 'X-User-Id');
+  if (!request.user?.id) {
+    throw new ApiError(401, 'Authentication token is required.');
+  }
+  return requireUuid(request.user.id, 'Authenticated user ID');
 }
 
 async function getActor(pool, userId) {

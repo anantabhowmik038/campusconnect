@@ -15,7 +15,7 @@ async function request(path, options) {
 export default function F10Workspace() {
   const [announcements, setAnnouncements] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [userId, setUserId] = useState('');
+  const [token, setToken] = useState(() => localStorage.getItem('campusconnect_token') || '');
   const [status, setStatus] = useState({ type: 'loading', message: 'Loading announcements...' });
 
   const loadAnnouncements = useCallback(async () => {
@@ -29,19 +29,19 @@ export default function F10Workspace() {
   }, []);
 
   const loadNotifications = useCallback(async () => {
-    if (!userId.trim()) {
+    if (!token.trim()) {
       setNotifications([]);
       return;
     }
     try {
       const result = await request('/notifications', {
-        headers: { 'X-User-Id': userId.trim() },
+        headers: { Authorization: `Bearer ${token.trim()}` },
       });
       setNotifications(result.notifications);
     } catch (error) {
       setStatus({ type: 'error', message: error.message });
     }
-  }, [userId]);
+  }, [token]);
 
   useEffect(() => { void loadAnnouncements(); }, [loadAnnouncements]);
   useEffect(() => { void loadNotifications(); }, [loadNotifications]);
@@ -50,7 +50,7 @@ export default function F10Workspace() {
     try {
       await request(`/notifications/${notificationId}/read`, {
         method: 'PATCH',
-        headers: { 'X-User-Id': userId.trim() },
+        headers: { Authorization: `Bearer ${token.trim()}` },
       });
       await loadNotifications();
     } catch (error) {
@@ -62,7 +62,7 @@ export default function F10Workspace() {
     try {
       await request('/notifications/read-all', {
         method: 'PATCH',
-        headers: { 'X-User-Id': userId.trim() },
+        headers: { Authorization: `Bearer ${token.trim()}` },
       });
       await loadNotifications();
     } catch (error) {
@@ -90,12 +90,20 @@ export default function F10Workspace() {
             ))}</div>}
         </div>
         <div className="communication-card">
-          <div className="card-heading"><h3>Your notifications</h3>{userId && <button type="button" onClick={() => void markAllRead()}>Mark all read</button>}</div>
-          <label className="user-id-field">Current user ID
-            <input value={userId} onChange={(event) => setUserId(event.target.value)} placeholder="UUID from authentication" />
+          <div className="card-heading"><h3>Your notifications</h3>{token && <button type="button" onClick={() => void markAllRead()}>Mark all read</button>}</div>
+          <label className="user-id-field">Authentication token
+            <input
+              type="password"
+              value={token}
+              onChange={(event) => {
+                setToken(event.target.value);
+                localStorage.setItem('campusconnect_token', event.target.value);
+              }}
+              placeholder="Bearer token from login"
+            />
           </label>
-          {!userId
-            ? <p className="empty-state">Enter your user ID to load targeted notifications.</p>
+          {!token
+            ? <p className="empty-state">Enter an authentication token to load targeted notifications.</p>
             : notifications.length === 0
               ? <p className="empty-state">You have no notifications.</p>
               : <div className="notification-list">{notifications.map((notification) => (
