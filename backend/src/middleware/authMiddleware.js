@@ -12,6 +12,7 @@ function getJwtSecret() {
 
 export async function verifyToken(request, _response, next) {
   try {
+    const secret = getJwtSecret();
     const authHeader = request.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new ApiError(401, 'Authentication token is missing.');
@@ -24,7 +25,7 @@ export async function verifyToken(request, _response, next) {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, getJwtSecret());
+      decoded = jwt.verify(token, secret);
     } catch {
       throw new ApiError(401, 'Invalid or expired authentication token.');
     }

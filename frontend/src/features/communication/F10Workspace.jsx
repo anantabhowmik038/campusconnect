@@ -15,7 +15,7 @@ async function request(path, options) {
 export default function F10Workspace() {
   const [announcements, setAnnouncements] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [token, setToken] = useState(() => localStorage.getItem('campusconnect_token') || '');
+  const [token] = useState(() => localStorage.getItem('token') || '');
   const [status, setStatus] = useState({ type: 'loading', message: 'Loading announcements...' });
 
   const loadAnnouncements = useCallback(async () => {
@@ -24,13 +24,20 @@ export default function F10Workspace() {
       setAnnouncements(result.announcements);
       setStatus({ type: 'success', message: 'Announcements loaded.' });
     } catch (error) {
-      setStatus({ type: 'error', message: error.message });
+      if (error.message === 'Authentication token is missing.' ||
+          error.message === 'Invalid or expired authentication token.' ||
+          error.message === 'Token has expired.') {
+        setStatus({ type: 'error', message: 'Your login has expired. Please log in again.' });
+      } else {
+        setStatus({ type: 'error', message: error.message });
+      }
     }
   }, []);
 
   const loadNotifications = useCallback(async () => {
     if (!token.trim()) {
       setNotifications([]);
+      setStatus({ type: 'error', message: 'Log in to view your notifications.' });
       return;
     }
     try {
@@ -91,19 +98,8 @@ export default function F10Workspace() {
         </div>
         <div className="communication-card">
           <div className="card-heading"><h3>Your notifications</h3>{token && <button type="button" onClick={() => void markAllRead()}>Mark all read</button>}</div>
-          <label className="user-id-field">Authentication token
-            <input
-              type="password"
-              value={token}
-              onChange={(event) => {
-                setToken(event.target.value);
-                localStorage.setItem('campusconnect_token', event.target.value);
-              }}
-              placeholder="Bearer token from login"
-            />
-          </label>
           {!token
-            ? <p className="empty-state">Enter an authentication token to load targeted notifications.</p>
+            ? <p className="empty-state">Log in to load targeted notifications.</p>
             : notifications.length === 0
               ? <p className="empty-state">You have no notifications.</p>
               : <div className="notification-list">{notifications.map((notification) => (

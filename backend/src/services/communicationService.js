@@ -95,14 +95,19 @@ export async function createAnnouncement(request, input) {
   const pool = requirePool();
 
   const actor = await getActor(pool, createdBy);
+  const ownership = clubId
+    ? await pool.query(
+      'SELECT officer_user_id FROM clubs WHERE id = $1',
+      [clubId],
+    )
+    : await pool.query(
+      'SELECT c.officer_user_id FROM events e JOIN clubs c ON c.id = e.club_id WHERE e.id = $1',
+      [eventId],
+    );
+  if (!ownership.rows[0]) {
+    throw new ApiError(404, 'Announcement target was not found.');
+  }
   if (actor.role !== 'campus_admin') {
-    const ownership = clubId
-      ? await pool.query('SELECT officer_user_id FROM clubs WHERE id = $1', [clubId])
-      : await pool.query(
-        'SELECT c.officer_user_id FROM events e JOIN clubs c ON c.id = e.club_id WHERE e.id = $1',
-        [eventId],
-      );
-    if (!ownership.rows[0]) throw new ApiError(404, 'Announcement target was not found.');
     if (ownership.rows[0].officer_user_id !== createdBy) {
       throw new ApiError(403, 'Only the club officer or a campus administrator can publish this announcement.');
     }

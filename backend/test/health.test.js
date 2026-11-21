@@ -80,6 +80,9 @@ test('F10 creates an announcement and fans out notifications to approved club me
     if (sql.includes('SELECT id, role FROM users')) {
       return { rows: [{ id: adminId, role: 'campus_admin' }] };
     }
+    if (sql.includes('SELECT officer_user_id FROM clubs')) {
+      return { rows: [{ officer_user_id: adminId }] };
+    }
     throw new Error(`Unexpected pool query: ${sql}`);
   };
 
@@ -138,4 +141,153 @@ test('F10 creates an announcement and fans out notifications to approved club me
       notified_user_count: 2,
     },
   });
+});
+
+test('F10 rejects an expired JWT', async () => {
+  const expiredToken = jwt.sign(
+    { id: '11111111-1111-4111-8111-111111111111' },
+    process.env.JWT_SECRET,
+    { expiresIn: -1 },
+  );
+  const response = await fetch(`${baseUrl}/api/notifications`, {
+    headers: { Authorization: `Bearer ${expiredToken}` },
+  });
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), { error: 'Invalid or expired authentication token.' });
+});
+
+test('F10 rejects inactive notification users', async () => {
+  const userId = '11111111-1111-4111-8111-111111111111';
+  pg.Pool.prototype.query = async function (sql) {
+    if (sql.includes('SELECT id, role, is_active FROM users')) {
+      return { rows: [{ id: userId, role: 'student', is_active: false }] };
+    }
+    throw new Error(`Unexpected pool query: ${sql}`);
+  };
+  const response = await fetch(`${baseUrl}/api/notifications`, {
+    headers: { Authorization: `Bearer ${jwt.sign({ id: userId }, process.env.JWT_SECRET)}` },
+  });
+  assert.equal(response.status, 403);
+  assert.deepEqual(await response.json(), { error: 'Active user identity is required.' });
+});
+
+test('F10 prevents a student from publishing a club announcement', async () => {
+  const userId = '11111111-1111-4111-8111-111111111111';
+  const clubId = '22222222-2222-4222-8222-222222222222';
+  pg.Pool.prototype.query = async function (sql) {
+    if (sql.includes('SELECT id, role, is_active FROM users')) {
+      return { rows: [{ id: userId, role: 'student', is_active: true }] };
+    }
+    if (sql.includes('SELECT id, role FROM users')) {
+      return { rows: [{ id: userId, role: 'student' }] };
+    }
+    if (sql.includes('SELECT officer_user_id FROM clubs')) {
+      return { rows: [{ officer_user_id: '33333333-3333-4333-8333-333333333333' }] };
+    }
+    throw new Error(`Unexpected pool query: ${sql}`);
+  };
+  const response = await fetch(`${baseUrl}/api/announcements`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${jwt.sign({ id: userId, role: 'student' }, process.env.JWT_SECRET)}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ clubId, title: 'Unauthorised', content: 'Test' }),
+  });
+  assert.equal(response.status, 403);
+  assert.deepEqual(await response.json(), {
+    error: 'Only the club officer or a campus administrator can publish this announcement.',
+  });
+});
+
+test('F10 validates direct notification fields', async () => {
+  const userId = '11111111-1111-4111-8111-111111111111';
+  pg.Pool.prototype.query = async function (sql) {
+    if (sql.includes('SELECT id, role, is_active FROM users')) {
+      return { rows: [{ id: userId, role: 'campus_admin', is_active: true }] };
+    }
+    throw new Error(`Unexpected pool query: ${sql}`);
+  };
+  const response = await fetch(`${baseUrl}/api/notifications`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${jwt.sign({ id: userId, role: 'campus_admin' }, process.env.JWT_SECRET)}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ userId: 'not-a-uuid', title: 'Test', message: 'Test', type: 'system' }),
+  });
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'userId must be a valid UUID.' });
+});
+
+test('F10 prevents students from sending direct notifications', async () => {
+  const userId = '11111111-1111-4111-8111-111111111111';
+  pg.Pool.prototype.query = async function (sql) {
+    if (sql.includes('SELECT id, role, is_active FROM users')) {
+      return { rows: [{ id: userId, role: 'student', is_active: true }] };
+    }
+    if (sql.includes('SELECT id, role FROM users')) {
+      return { rows: [{ id: userId, role: 'student' }] };
+    }
+    throw new Error(`Unexpected pool query: ${sql}`);
+  };
+  const response = await fetch(`${baseUrl}/api/notifications`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${jwt.sign({ id: userId, role: 'student' }, process.env.JWT_SECRET)}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      userId: '22222222-2222-4222-8222-222222222222',
+      title: 'Test',
+      message: 'Test',
+      type: 'system',
+    }),
+  });
+  assert.equal(response.status, 403);
+  assert.deepEqual(await response.json(), { error: 'Only a campus administrator can send direct notifications.' });
+});
+
+test('F10 marks only the authenticated owner notification as read', async () => {
+  const userId = '11111111-1111-4111-8111-111111111111';
+  const notificationId = '22222222-2222-4222-8222-222222222222';
+  pg.Pool.prototype.query = async function (sql, values) {
+    if (sql.includes('SELECT id, role, is_active FROM users')) {
+      return { rows: [{ id: userId, role: 'student', is_active: true }] };
+    }
+    if (sql.includes('SELECT id, role FROM users')) {
+      return { rows: [{ id: userId, role: 'student' }] };
+    }
+    if (sql.includes('UPDATE notifications SET is_read = TRUE')) {
+      return { rows: [{ id: values[0], is_read: true }] };
+    }
+    throw new Error(`Unexpected pool query: ${sql}`);
+  };
+  const response = await fetch(`${baseUrl}/api/notifications/${notificationId}/read`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${jwt.sign({ id: userId }, process.env.JWT_SECRET)}` },
+  });
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { notification: { id: notificationId, is_read: true } });
+});
+
+test('F10 rejects unread notification reads from another user', async () => {
+  const userId = '11111111-1111-4111-8111-111111111111';
+  const notificationId = '22222222-2222-4222-8222-222222222222';
+  pg.Pool.prototype.query = async function (sql) {
+    if (sql.includes('SELECT id, role, is_active FROM users')) {
+      return { rows: [{ id: userId, role: 'student', is_active: true }] };
+    }
+    if (sql.includes('SELECT id, role FROM users')) {
+      return { rows: [{ id: userId, role: 'student' }] };
+    }
+    if (sql.includes('UPDATE notifications SET is_read = TRUE')) return { rows: [] };
+    throw new Error(`Unexpected pool query: ${sql}`);
+  };
+  const response = await fetch(`${baseUrl}/api/notifications/${notificationId}/read`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${jwt.sign({ id: userId }, process.env.JWT_SECRET)}` },
+  });
+  assert.equal(response.status, 404);
+  assert.deepEqual(await response.json(), { error: 'Notification was not found.' });
 });
