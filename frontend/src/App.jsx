@@ -15,7 +15,7 @@ function HomePage() {
   const checkApi = useCallback(async () => {
     setApi({ type: 'loading', message: 'Checking API...' });
     try {
-      const response = await fetch(`${apiBase}/health`, { cache: 'no-store' });
+      const response = await fetch(`${apiBase}/api/health`, { cache: 'no-store' });
       if (!response.ok) throw new Error('API unavailable');
       const result = await response.json();
       setApi({ type: 'success', message: `${result.application} is running` });
