@@ -7,6 +7,7 @@ export default function AppShell({ children }) {
         <nav>
           <a className="nav-active" href="#top">Overview</a>
           <a href="#modules">Feature modules</a>
+          <a href="#feedback">Feedback</a>
           <a href="#setup">Developer setup</a>
         </nav>
         <p className="sidebar-bottom">CSE451 · Four-member team</p>

@@ -16,6 +16,10 @@ This document is not an approved schema. Discuss and approve it in Discord befor
 ## Foundation API endpoints (actually implemented)
 - `GET /api/health` → HTTP 200, basic server status
 - `GET /api/health/database` → HTTP 200/503, PostgreSQL connection status
+- `GET /api/feedback/eligible-events` → HTTP 200, completed events attended by the current user; requires bearer authentication
+- `GET /api/feedback/events/:eventId` → HTTP 200, event feedback summary and reviews
+- `POST /api/feedback/events/:eventId` → HTTP 201, creates or updates an attendee's feedback; requires bearer authentication
+- `DELETE /api/feedback/:feedbackId` → HTTP 200, removes the review for its author or a campus administrator; requires bearer authentication
 
 ## Items to finalize before feature development
 1. Shared PostgreSQL schema: users, clubs, members, events, proposals, registrations, attendance, venues, shifts, notifications, feedback.
