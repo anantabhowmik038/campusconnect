@@ -85,7 +85,17 @@ export const clubController = {
         });
       }
 
-      return res.status(200).json({ club });
+      const members =
+        typeof clubModel.findMembersByClubId === 'function'
+          ? await clubModel.findMembersByClubId(club.id)
+          : [];
+
+      return res.status(200).json({
+        club: {
+          ...club,
+          members,
+        },
+      });
     } catch (err) {
       if (err?.code === '22P02') {
         return res.status(400).json({ error: 'Invalid club ID.' });

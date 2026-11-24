@@ -15,12 +15,22 @@ function HomePage() {
   const checkApi = useCallback(async () => {
     setApi({ type: 'loading', message: 'Checking API...' });
     try {
-      const response = await fetch(`${apiBase}/api/health`, { cache: 'no-store' });
-      if (!response.ok) throw new Error('API unavailable');
+      const response = await fetch('/api/health', { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(`Health check failed with status ${response.status}`);
+      }
       const result = await response.json();
-      setApi({ type: 'success', message: `${result.application} is running` });
+      setApi({
+        type: 'success',
+        message: result.application
+          ? `${result.application} is running`
+          : 'API is running',
+      });
     } catch {
-      setApi({ type: 'error', message: 'API unavailable. Start the backend on port 5000.' });
+      setApi({
+        type: 'error',
+        message: 'API unavailable. Ensure backend is running on port 5000.',
+      });
     }
   }, []);
 
