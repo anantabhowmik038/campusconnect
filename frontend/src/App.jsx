@@ -18,9 +18,17 @@ function HomePage() {
       const response = await fetch(`${apiBase}/health`, { cache: 'no-store' });
       if (!response.ok) throw new Error('API unavailable');
       const result = await response.json();
-      setApi({ type: 'success', message: `${result.application} is running` });
+      setApi({
+        type: 'success',
+        message: result.application
+          ? `${result.application} is running`
+          : 'API is running',
+      });
     } catch {
-      setApi({ type: 'error', message: 'API unavailable. Start the backend on port 5000.' });
+      setApi({
+        type: 'error',
+        message: 'API unavailable. Ensure backend is running on port 5000.',
+      });
     }
   }, []);
 

@@ -2,8 +2,9 @@ import { clubModel } from '../models/clubModel.js';
 
 const ALLOWED_STATUSES = new Set(['active', 'inactive']);
 
-function isValidHttpUrl(value) {
+function isValidLogoUrl(value) {
   if (!value) return true;
+  if (value.startsWith('/')) return true;
   try {
     const parsed = new URL(value);
     return parsed.protocol === 'http:' || parsed.protocol === 'https:';
@@ -29,14 +30,13 @@ export const clubController = {
 
       const isAuthenticated = Boolean(req.user);
 
-      // Guest users get public status & enrolled member counts without sensitive/admin-only fields
+      // Guest users get public status & enrolled member counts only
       const formattedClubs = isAuthenticated
         ? clubs
         : clubs.map((club) => ({
             id: club.id,
             name: club.name,
             category: club.category,
-            logo_url: club.logo_url,
             status: club.status,
             enrolled_members_count:
               club.enrolled_members_count ?? club.member_count ?? club.members_count ?? 0,
@@ -51,11 +51,17 @@ export const clubController = {
   // GET /api/clubs/:id
   async getClubById(req, res, next) {
     try {
-      const clubId = Number(req.params.id);
-      if (!Number.isInteger(clubId) || clubId <= 0) {
+      const rawId = typeof req.params.id === 'string' ? req.params.id.trim() : '';
+      const numericId = Number(rawId);
+      const isValidId =
+        (Number.isInteger(numericId) && numericId > 0) ||
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(rawId);
+
+      if (!rawId || !isValidId) {
         return res.status(400).json({ error: 'Invalid club ID.' });
       }
 
+      const clubId = Number.isInteger(numericId) && numericId > 0 ? numericId : rawId;
       const club = await clubModel.findById(clubId);
       if (!club) {
         return res.status(404).json({ error: 'Club not found.' });
@@ -65,7 +71,7 @@ export const clubController = {
         return res.status(404).json({ error: 'Club not found.' });
       }
 
-      // Guest users only see public status & enrolled member count, not owner/member details
+      // Guest users only see public status & enrolled member count
       if (!req.user) {
         return res.status(200).json({
           club: {
@@ -79,8 +85,21 @@ export const clubController = {
         });
       }
 
-      return res.status(200).json({ club });
+      const members =
+        typeof clubModel.findMembersByClubId === 'function'
+          ? await clubModel.findMembersByClubId(club.id)
+          : [];
+
+      return res.status(200).json({
+        club: {
+          ...club,
+          members,
+        },
+      });
     } catch (err) {
+      if (err?.code === '22P02') {
+        return res.status(400).json({ error: 'Invalid club ID.' });
+      }
       return next(err);
     }
   },
@@ -101,26 +120,46 @@ export const clubController = {
       }
 
       const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
-      const category = typeof req.body.category === 'string' ? req.body.category.trim() : '';
+      const category =
+        typeof req.body.category === 'string' && req.body.category.trim()
+          ? req.body.category.trim()
+          : 'General';
       const description =
         typeof req.body.description === 'string' ? req.body.description.trim() : '';
-      const logoUrl =
-        typeof req.body.logo_url === 'string' ? req.body.logo_url.trim() : null;
+      const rawLogo =
+        typeof req.body.logo_url === 'string' ? req.body.logo_url.trim() : '';
+      const logoUrl = rawLogo ? rawLogo : null;
 
       if (!name) {
         return res.status(400).json({ error: 'Club name is required.' });
       }
 
-      if (logoUrl && !isValidHttpUrl(logoUrl)) {
-        return res.status(400).json({ error: 'Logo URL must be a valid http or https URL.' });
+      if (logoUrl && !isValidLogoUrl(logoUrl)) {
+        return res.status(400).json({
+          error: 'Logo URL must start with "/", "http://", or "https://".',
+        });
       }
 
-      const officerUserId =
-        req.user.role === 'campus_admin' && req.body.officer_user_id
-          ? Number(req.body.officer_user_id)
-          : req.user.id;
+      const rawAuthUserId = req.user.id;
+      const hasExplicitOfficerId =
+        req.user.role === 'campus_admin' &&
+        req.body.officer_user_id !== undefined &&
+        req.body.officer_user_id !== null &&
+        String(req.body.officer_user_id).trim() !== '';
 
-      if (!Number.isInteger(officerUserId) || officerUserId <= 0) {
+      const candidateId = hasExplicitOfficerId
+        ? req.body.officer_user_id
+        : rawAuthUserId;
+
+      const numericId = Number(candidateId);
+      const officerUserId =
+        Number.isInteger(numericId) && numericId > 0
+          ? numericId
+          : typeof candidateId === 'string' && candidateId.trim() !== ''
+            ? candidateId.trim()
+            : null;
+
+      if (!officerUserId) {
         return res.status(400).json({ error: 'Invalid officer_user_id.' });
       }
 
@@ -145,8 +184,8 @@ export const clubController = {
       if (err?.code === '23505') {
         return res.status(409).json({ error: 'A club with this name already exists.' });
       }
-      if (err?.code === '23503') {
-        return res.status(400).json({ error: 'Assigned officer user does not exist.' });
+      if (err?.code === '23503' || err?.code === '22P02') {
+        return res.status(400).json({ error: 'Invalid officer_user_id.' });
       }
       return next(err);
     }
@@ -159,19 +198,26 @@ export const clubController = {
         return res.status(401).json({ error: 'Authentication required.' });
       }
 
-      const clubId = Number(req.params.id);
-      if (!Number.isInteger(clubId) || clubId <= 0) {
+      const rawId = typeof req.params.id === 'string' ? req.params.id.trim() : '';
+      const numericId = Number(rawId);
+      const isValidId =
+        (Number.isInteger(numericId) && numericId > 0) ||
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(rawId);
+
+      if (!rawId || !isValidId) {
         return res.status(400).json({ error: 'Invalid club ID.' });
       }
 
+      const clubId = Number.isInteger(numericId) && numericId > 0 ? numericId : rawId;
       const existingClub = await clubModel.findById(clubId);
       if (!existingClub) {
         return res.status(404).json({ error: 'Club not found.' });
       }
 
+      const authUserId = req.user.id;
       const isAdmin = req.user.role === 'campus_admin';
       const isAssignedOfficer =
-        req.user.role === 'club_officer' && existingClub.officer_user_id === req.user.id;
+        req.user.role === 'club_officer' && existingClub.officer_user_id === authUserId;
 
       if (!isAdmin && !isAssignedOfficer) {
         return res.status(403).json({
@@ -201,8 +247,10 @@ export const clubController = {
       if (req.body.logo_url !== undefined) {
         const trimmedLogo =
           typeof req.body.logo_url === 'string' ? req.body.logo_url.trim() : '';
-        if (trimmedLogo && !isValidHttpUrl(trimmedLogo)) {
-          return res.status(400).json({ error: 'Logo URL must be a valid http or https URL.' });
+        if (trimmedLogo && !isValidLogoUrl(trimmedLogo)) {
+          return res.status(400).json({
+            error: 'Logo URL must start with "/", "http://", or "https://".',
+          });
         }
         updates.logo_url = trimmedLogo || null;
       }
@@ -225,8 +273,16 @@ export const clubController = {
             error: 'Forbidden: only a campus administrator can reassign the club officer.',
           });
         }
-        const nextOfficerId = Number(req.body.officer_user_id);
-        if (!Number.isInteger(nextOfficerId) || nextOfficerId <= 0) {
+        const rawOfficerId = req.body.officer_user_id;
+        const nextNumericOfficerId = Number(rawOfficerId);
+        const nextOfficerId =
+          Number.isInteger(nextNumericOfficerId) && nextNumericOfficerId > 0
+            ? nextNumericOfficerId
+            : typeof rawOfficerId === 'string' && rawOfficerId.trim() !== ''
+              ? rawOfficerId.trim()
+              : null;
+
+        if (!nextOfficerId) {
           return res.status(400).json({ error: 'Invalid officer_user_id.' });
         }
         updates.officer_user_id = nextOfficerId;
@@ -242,8 +298,8 @@ export const clubController = {
       if (err?.code === '23505') {
         return res.status(409).json({ error: 'A club with this name already exists.' });
       }
-      if (err?.code === '23503') {
-        return res.status(400).json({ error: 'Assigned officer user does not exist.' });
+      if (err?.code === '23503' || err?.code === '22P02') {
+        return res.status(400).json({ error: 'Invalid officer_user_id.' });
       }
       return next(err);
     }

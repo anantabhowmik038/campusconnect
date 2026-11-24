@@ -1,8 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 
-const RAW_API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-const API_BASE = `${RAW_API_BASE.replace(/\/+$/, '')}/api/clubs`;
+const rawApiBase = import.meta.env.VITE_API_BASE_URL?.trim() || '/api';
+const API_BASE = rawApiBase.endsWith('/api')
+  ? rawApiBase
+  : `${rawApiBase.replace(/\/+$/, '')}/api`;
+const CLUBS_API = `${API_BASE}/clubs`;
 
 const CATEGORIES = ['All', 'Technology', 'Cultural', 'Sports', 'Academic', 'Social'];
 
@@ -105,7 +108,7 @@ export default function ClubsPage() {
       if (token) headers.Authorization = `Bearer ${token}`;
 
       const queryString = params.toString();
-      const url = queryString ? `${API_BASE}?${queryString}` : API_BASE;
+      const url = queryString ? `${CLUBS_API}?${queryString}` : CLUBS_API;
 
       const response = await fetch(url, { headers });
       const data = await response.json();
@@ -148,7 +151,7 @@ export default function ClubsPage() {
     setNotice('');
     setIsEditing(false);
     try {
-      const response = await fetch(`${API_BASE}/${clubId}`, {
+      const response = await fetch(`${CLUBS_API}/${clubId}`, {
         headers: {
           Authorization: `Bearer ${latest.token}`,
         },
@@ -159,7 +162,11 @@ export default function ClubsPage() {
         throw new Error(data.error || 'Club not found.');
       }
 
-      setSelectedClub(data.club);
+      const normalizedMembers = Array.isArray(data.club?.members) ? data.club.members : [];
+      setSelectedClub({
+        ...data.club,
+        members: normalizedMembers,
+      });
     } catch (err) {
       setSelectedClub(null);
       setError(err.message);
@@ -179,7 +186,7 @@ export default function ClubsPage() {
     }
 
     try {
-      const response = await fetch(API_BASE, {
+      const response = await fetch(CLUBS_API, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -242,7 +249,7 @@ export default function ClubsPage() {
         payload.status = editStatus;
       }
 
-      const response = await fetch(`${API_BASE}/${selectedClub.id}`, {
+      const response = await fetch(`${CLUBS_API}/${selectedClub.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -256,14 +263,24 @@ export default function ClubsPage() {
         throw new Error(data.error || 'Failed to update club.');
       }
 
+      const updatedMembers = Array.isArray(data.club?.members)
+        ? data.club.members
+        : selectedClub.members || [];
+
       setIsEditing(false);
-      setSelectedClub(data.club);
+      setSelectedClub({
+        ...data.club,
+        members: updatedMembers,
+      });
       setNotice('Club details updated successfully.');
       await fetchClubs();
     } catch (err) {
       setError(err.message);
     }
   };
+
+  const selectedMembers =
+    isAuthenticated && Array.isArray(selectedClub?.members) ? selectedClub.members : [];
 
   return (
     <div style={{ maxWidth: '1040px', margin: '30px auto', padding: '20px', fontFamily: 'sans-serif' }}>
@@ -543,20 +560,33 @@ export default function ClubsPage() {
                     </p>
                     <p><strong>Description:</strong> {selectedClub.description || 'No description provided.'}</p>
 
-                    {Array.isArray(selectedClub.members) && (
-                      <div>
-                        <strong>Members:</strong>
+                    <div>
+                      <strong>Members ({selectedMembers.length}):</strong>
+                      {selectedMembers.length === 0 ? (
+                        <p style={{ marginTop: '6px', color: '#666', fontSize: '14px' }}>
+                          No approved members listed yet.
+                        </p>
+                      ) : (
                         <ul style={{ marginTop: '6px', paddingLeft: '18px' }}>
-                          {selectedClub.members.length === 0 ? (
-                            <li>No enrolled members listed yet.</li>
-                          ) : (
-                            selectedClub.members.map((m) => (
-                              <li key={m.id || m.user_id}>{m.full_name || m.name || m.user_id}</li>
-                            ))
-                          )}
+                          {selectedMembers.map((member) => {
+                            const memberKey =
+                              member.membership_id || member.id || member.user_id || member.email;
+                            const memberName =
+                              member.full_name || member.name || member.email || member.user_id;
+                            const memberRole = member.club_role || member.role;
+                            const memberStatus = member.status;
+
+                            return (
+                              <li key={memberKey} style={{ marginBottom: '4px' }}>
+                                <span>{memberName}</span>
+                                {memberRole ? ` (${memberRole})` : ''}
+                                {memberStatus ? ` — ${memberStatus}` : ''}
+                              </li>
+                            );
+                          })}
                         </ul>
-                      </div>
-                    )}
+                      )}
+                    </div>
 
                     {canEditSelectedClub ? (
                       <button
