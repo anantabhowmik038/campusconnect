@@ -6,6 +6,7 @@ import {
   applyForShift,
   reviewApplication,
 } from '../services/volunteerService.js';
+import { getApplications } from '../services/volunteerService.js';
 
 const router = Router();
 
@@ -119,5 +120,20 @@ router.patch(
     }
   },
 );
+router.get(
+  '/volunteer-shifts/:shiftId/applications',
+  requireUser,
+  requireRole('club_officer', 'campus_admin'),
+  async (req, res, next) => {
+    try {
+      validateId(req.params.shiftId);
 
+      const data = await getApplications(req.params.shiftId, req.user);
+
+      res.status(200).json({ data });
+    } catch (error) {
+      handleError(error, res, next);
+    }
+  },
+);
 export default router;

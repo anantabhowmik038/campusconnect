@@ -287,3 +287,37 @@ export async function reviewApplication(applicationId, status, user) {
     return updated.rows[0];
   });
 }
+
+export async function getApplications(shiftId, user) {
+  const pool = getDatabasePool();
+
+  const shift = await pool.query(
+    `
+    SELECT c.officer_user_id
+    FROM volunteer_shifts s
+    JOIN events e ON e.id = s.event_id
+    JOIN clubs c ON c.id = e.club_id
+    WHERE s.id = $1
+  `,
+    [shiftId],
+  );
+
+  if (!shift.rows.length) {
+    fail(404, 'Shift not found');
+  }
+
+  authorizeOfficer(user, shift.rows[0].officer_user_id);
+
+  const result = await pool.query(
+    `
+    SELECT a.id, a.user_id, a.status, u.full_name
+    FROM volunteer_applications a
+    JOIN users u ON u.id = a.user_id
+    WHERE a.shift_id = $1
+    ORDER BY u.full_name
+  `,
+    [shiftId],
+  );
+
+  return result.rows;
+}
