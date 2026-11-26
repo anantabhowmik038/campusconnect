@@ -39,3 +39,5 @@
 .attendance-table { overflow-x: auto; }
 .attendance-table table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
 .attendance-table th, .attendance-table td { border-bottom: 1px solid #e2e8f0; padding: 10px; }
+
+.feature-meta .pill-implemented { background: #dcfce7; color: #166534; }

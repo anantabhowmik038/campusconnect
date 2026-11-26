@@ -20,6 +20,8 @@ import EventWorkspace, {
 } from './features/events/EventWorkspace.jsx';
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
+const features = modules.flatMap((group) => group.features);
+const implementedCount = features.filter((feature) => feature.implemented).length;
 
 function readSession() {
   const token = localStorage.getItem('token');
@@ -159,9 +161,9 @@ function HomePage() {
 
       <section className="stats" aria-label="Project overview">
         <div className="stat">
-          <span>Functional modules planned</span>
-          <strong>12</strong>
-          <small>Distributed across the team</small>
+          <span>Implemented features</span>
+          <strong>{implementedCount} of {features.length}</strong>
+          <small>Across the planned feature scope</small>
         </div>
 
         <div className="stat">
@@ -187,7 +189,7 @@ function HomePage() {
 
       <section id="modules" className="modules">
         <span className="eyebrow">PROJECT OWNERSHIP</span>
-        <h2>Our 12 feature modules</h2>
+        <h2>Our {features.length} feature modules</h2>
 
         <nav className="event-entry" aria-label="Event proposals">
           <a href="/#/proposals">My proposals</a>
@@ -202,8 +204,8 @@ function HomePage() {
             </div>
 
             <div className="grid">
-              {group.features.map(([id, name]) => (
-                <FeatureCard key={id} id={id} name={name} />
+              {group.features.map((feature) => (
+                <FeatureCard key={feature.id} {...feature} />
               ))}
             </div>
           </section>
