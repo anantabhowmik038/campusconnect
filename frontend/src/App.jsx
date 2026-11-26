@@ -7,6 +7,7 @@ import FeatureCard from './components/FeatureCard.jsx';
 import F10Workspace from './features/communication/F10Workspace.jsx';
 import F11Workspace from './features/feedback/F11Workspace.jsx';
 import VenueBooking from './features/VenueBooking.jsx';
+import QRAttendance from './features/QRAttendance.jsx';
 import { modules } from './data/modules.js';
 
 import LoginPage from './pages/LoginPage.jsx';
@@ -71,6 +72,11 @@ function EventWorkspaceRoute({ view }) {
 function VenueBookingRoute() {
   const [session] = useState(readSession);
   return <VenueBooking session={session} apiBase={apiBase} />;
+}
+
+function AttendanceRoute() {
+  const [session] = useState(readSession);
+  return <QRAttendance session={session} apiBase={apiBase} />;
 }
 
 function HomePage() {
@@ -141,6 +147,7 @@ function HomePage() {
           <Link to="/clubs">Browse Clubs</Link>
           <Link to="/events">Browse Events</Link>
           <Link to="/venues">Venue booking</Link>
+          <Link to="/attendance">QR attendance</Link>
           <a href="/#communication">Announcements</a>
           <a href="/#feedback">Feedback</a>
         </div>
@@ -248,6 +255,7 @@ function AppContent() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/clubs" element={<ClubsPage />} />
         <Route path="/venues" element={<VenueBookingRoute />} />
+        <Route path="/attendance" element={<AttendanceRoute />} />
 
         <Route
           path="/events"

@@ -8,6 +8,7 @@ import clubRoutes from './routes/clubRoutes.js';
 import communicationRoutes from './routes/communicationRoutes.js';
 import feedbackRoutes from './routes/feedbackRoutes.js';
 import venueRoutes from './routes/venueRoutes.js';
+import attendanceRoutes from './routes/attendanceRoutes.js';
 
 import { createEventRouter } from './routes/eventRoutes.js';
 import { createPublicEventRouter } from './routes/publicEventRoutes.js';
@@ -51,6 +52,7 @@ app.use('/api/clubs', clubRoutes);
 app.use('/api', communicationRoutes);
 app.use('/api', feedbackRoutes);
 app.use('/api', venueRoutes);
+app.use('/api', attendanceRoutes);
 
 // Unknown routes
 app.use('/api', (_req, res) => {

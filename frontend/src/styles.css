@@ -18,3 +18,24 @@
 .venue-table-scroll table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
 .venue-table-scroll th, .venue-table-scroll td { border-bottom: 1px solid #e2e8f0; padding: 10px; }
 .venue-review { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.attendance-workspace > .api-status { margin-top: 18px; }
+.attendance-workspace .setup { margin-top: 20px; }
+.attendance-workspace label { display: grid; gap: 7px; min-width: 0; font-size: 13px; font-weight: 600; }
+.attendance-workspace select, .attendance-workspace textarea, .attendance-workspace input {
+  width: 100%; border: 1px solid #cbd5e1; border-radius: 8px;
+  background: #fff; color: inherit; padding: 10px; font: inherit;
+}
+.attendance-form { display: grid; gap: 12px; max-width: 480px; }
+.attendance-workspace button { justify-self: start; border: 1px solid #a7f3d0; border-radius: 8px; background: #ecfdf5; color: #065f46; padding: 9px 12px; font-size: 13px; font-weight: 700; }
+.attendance-workspace button:disabled { opacity: .55; cursor: not-allowed; }
+.attendance-workspace video { width: 100%; border-radius: 10px; background: #0f172a; }
+.attendance-ticket { margin-top: 16px; max-width: 480px; }
+.attendance-ticket svg { display: block; max-width: 100%; height: auto; }
+.attendance-ticket details { font-size: 13px; }
+.attendance-ticket summary { cursor: pointer; }
+.attendance-ticket details label { margin-top: 10px; }
+.attendance-roster-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.attendance-table { overflow-x: auto; }
+.attendance-table table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+.attendance-table th, .attendance-table td { border-bottom: 1px solid #e2e8f0; padding: 10px; }

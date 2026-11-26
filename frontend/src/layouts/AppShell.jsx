@@ -10,6 +10,7 @@ export default function AppShell({ children, eventView, eventsActive = false }) 
           <a className={eventView === 'admin' ? 'nav-active' : undefined} href="/#/approval-queue">Admin approval queue</a>
           <a href="/#modules">Feature modules</a>
           <a href="/venues">Venue booking</a>
+          <a href="/attendance">QR attendance</a>
           <a href="/#communication">Announcements</a>
           <a href="/#feedback">Feedback</a>
           <a href="/#setup">Developer setup</a>

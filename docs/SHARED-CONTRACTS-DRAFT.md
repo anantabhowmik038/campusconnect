@@ -33,6 +33,16 @@ Protected F10 routes use F01's bearer JWT authentication. The backend derives id
 
 Protected F11 routes use F01's bearer JWT authentication and database-backed roles. Saving feedback requires an attendance record for a completed event. Ratings must be JSON integers from 1 to 5.
 
+## F07 attendance endpoints
+
+- `GET /api/attendance/registrations` lists the signed-in user?s eligible registrations.
+- `GET /api/attendance/events` lists events with registrations that the signed-in staff member can manage.
+- `POST /api/attendance/tickets` issues a signed 24-hour ticket for the owner of an active registration.
+- `POST /api/attendance/check-in` verifies `ticket_token` and records a single check-in. When supplied, `event_id` must match the registration.
+- `GET /api/events/:eventId/attendance` returns the roster for the assigned club officer or a campus administrator.
+
+Set `ATTENDANCE_TICKET_SECRET` in the backend environment to an independent random secret of at least 32 bytes. Grant staff access to check-in over HTTPS for browser camera support. The workspace also accepts manual ticket codes.
+
 ## Items to finalize before feature development
 1. Shared PostgreSQL schema: users, clubs, members, events, proposals, registrations, attendance, venues, shifts, notifications, feedback.
 2. Primary-key types, foreign-key relationships, enum/status values, migrations.
