@@ -68,6 +68,16 @@ export async function listStaffEvents(user) {
   return rows;
 }
 
+/**
+ * Issues a signed ticket valid for 24 hours for the authenticated owner of a current registration.
+ * A registration that is inactive or already checked in cannot receive a ticket.
+ *
+ * @async
+ * @param {string} registrationId - Registration UUID.
+ * @param {AuthenticatedUser} user - User supplied by authentication middleware.
+ * @returns {Promise<{ticket_token: string, expires_at: string}>} Signed token and expiration as an ISO timestamp.
+ * @throws {ApiError} Invalid UUID, missing or unowned registration, ineligible registration, or unavailable configuration.
+ */
 export async function issueTicket(registrationId, user) {
   const id = requireId(registrationId, 'registration_id');
   const { rows: [registration] } = await requirePool().query(
@@ -95,6 +105,18 @@ function authorizeStaff(user, officerId) {
   }
 }
 
+/**
+ * Checks in a registered attendee using a valid signed ticket. The assigned club officer
+ * or a campus administrator may check in the attendee. A transaction locks the registration
+ * and the database uniqueness constraint prevents duplicate check-ins.
+ *
+ * @async
+ * @param {string} ticketToken - Signed, unexpired attendance ticket.
+ * @param {AuthenticatedUser} user - Authenticated staff member.
+ * @param {string} [eventId] - Selected event UUID, which must match the ticket's registration when supplied.
+ * @returns {Promise<{registration_id: string, checked_in_at: Date}>} The recorded registration and check-in time.
+ * @throws {ApiError} Invalid or expired ticket, unauthorized actor, missing registration, event mismatch, ineligible registration, duplicate check-in, or unavailable configuration.
+ */
 export async function checkIn(ticketToken, user, eventId) {
   const selectedEvent = eventId === undefined ? null : requireId(eventId, 'event_id');
   const { registrationId, expiresAt } = verifyTicket(ticketToken);

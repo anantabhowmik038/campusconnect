@@ -5,7 +5,13 @@ import { verifyToken } from '../middleware/authMiddleware.js';
 const router = Router();
 
 /**
- * Attaches req.user when a Bearer token is provided, without blocking public GET requests.
+ * Allows anonymous club reads and delegates supplied bearer credentials to F01.
+ * A bearer credential that fails verification is handled by the shared verifier.
+ *
+ * @param {express.Request} req - Request that may contain an Authorization header.
+ * @param {express.Response} res - Response used by the verifier if a token is rejected.
+ * @param {express.NextFunction} next - Continues the route after optional authentication.
+ * @returns {void|Promise<express.Response|void>} Continues anonymously or returns the verifier result.
  */
 function optionalAuth(req, res, next) {
   const authHeader = req.headers.authorization;

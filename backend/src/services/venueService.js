@@ -108,6 +108,21 @@ export async function getVenueBookings(venueId, user) {
   return rows;
 }
 
+/**
+ * Requests a pending reservation for an active venue. The caller must be the assigned
+ * officer of the event's active club. The route restricts this operation to club officers.
+ * The time range must be ordered and must not overlap an approved booking for the venue.
+ *
+ * @async
+ * @param {object} data - Booking input.
+ * @param {string} data.event_id - Event UUID.
+ * @param {string} data.venue_id - Venue UUID.
+ * @param {string} data.start_time - Start timestamp with a timezone.
+ * @param {string} data.end_time - End timestamp with a timezone.
+ * @param {AuthenticatedUser} user - Authenticated club officer.
+ * @returns {Promise<{id: string, status: string}>} The booking UUID and pending status.
+ * @throws {ApiError} Invalid input, unauthorized ownership, missing event or active venue, overlap, or unavailable storage.
+ */
 export async function createBooking(data, user) {
   const eventId = requireId(data?.event_id, 'event_id');
   const venueId = requireId(data?.venue_id, 'venue_id');
@@ -139,6 +154,17 @@ export async function createBooking(data, user) {
   });
 }
 
+/**
+ * Approves or rejects a pending booking. The route restricts this operation to campus administrators.
+ * Approvals serialize on the venue lock and recheck availability before committing.
+ *
+ * @async
+ * @param {string} bookingId - Booking UUID.
+ * @param {'approved'|'rejected'} status - Requested decision.
+ * @param {AuthenticatedUser} user - Authenticated reviewer.
+ * @returns {Promise<object>} Updated booking row, including the decision and reviewer ID.
+ * @throws {ApiError} Invalid UUID or decision, missing booking, previous decision, inactive venue, overlap, or unavailable storage.
+ */
 export async function reviewBooking(bookingId, status, user) {
   requireId(bookingId, 'bookingId');
   if (!['approved', 'rejected'].includes(status)) throw new ApiError(400, 'Invalid review status.');

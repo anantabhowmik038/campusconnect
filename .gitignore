@@ -5,6 +5,7 @@ node_modules/
 dist/
 build/
 coverage/
+docs/generated/jsdoc/
 
 # Environment variables and secrets
 .env

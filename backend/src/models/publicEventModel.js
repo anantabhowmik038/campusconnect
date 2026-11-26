@@ -2,6 +2,22 @@ const publicColumns = 'e.id, e.title, e.category, e.image_url, e.start_time, e.e
   'e.capacity, e.status, e.club_id, c.name AS club_name';
 const publishedEvents = "FROM events e JOIN clubs c ON c.id = e.club_id WHERE e.status = 'published'";
 
+/**
+ * Lists published events only. Date filters are interpreted in Bangladesh time.
+ * Search matches title or description literally, and event ID breaks ties in start-time order.
+ *
+ * @async
+ * @param {pg.Pool} pool - Database pool.
+ * @param {object} filters - Validated discovery filters.
+ * @param {string} [filters.search] - Case-insensitive title or description substring.
+ * @param {string} [filters.category] - Case-insensitive exact category.
+ * @param {?string} [filters.from] - Inclusive start date in YYYY-MM-DD format.
+ * @param {?string} [filters.to] - Inclusive end date in YYYY-MM-DD format.
+ * @param {number} filters.page - One-based page number.
+ * @param {number} filters.limit - Maximum rows per page.
+ * @param {'start_asc'|'start_desc'} filters.sort - Start-time ordering.
+ * @returns {Promise<{data: object[], pagination: {page: number, limit: number, total: number}}>} Public rows and pagination metadata.
+ */
 export async function listPublicEvents(pool, { search, category, from, to, page, limit, sort }) {
   const order = sort === 'start_desc' ? 'start_time DESC, id DESC' : 'start_time ASC, id ASC';
   const { rows: [result] } = await pool.query(
@@ -23,6 +39,14 @@ export async function listPublicEvents(pool, { search, category, from, to, page,
   return { data: result.data, pagination: { page, limit, total: Number(result.total) } };
 }
 
+/**
+ * Fetches public event details, including the description. Only published events are eligible.
+ *
+ * @async
+ * @param {pg.Pool} pool - Database pool.
+ * @param {string} id - Event UUID.
+ * @returns {Promise<object|undefined>} Public event row or undefined if no published event matches.
+ */
 export async function findPublicEvent(pool, id) {
   const { rows: [event] } = await pool.query(
     `SELECT ${publicColumns}, e.description ${publishedEvents} AND e.id = $1`, [id],

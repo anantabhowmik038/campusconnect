@@ -15,6 +15,17 @@ function isValidLogoUrl(value) {
 
 export const clubController = {
   // GET /api/clubs?search=&category=&includeAll=true
+  /**
+   * Lists clubs using optional name and category filters.
+   * Only a campus administrator can opt into inactive results. Guest responses use a limited public projection.
+   *
+   * @function listClubs
+   * @async
+   * @param {express.Request} req - Request with optional search, category, and includeAll query values.
+   * @param {express.Response} res - Response for the club collection.
+   * @param {express.NextFunction} next - Receives unexpected errors.
+   * @returns {Promise<express.Response|void>} Sends a JSON clubs collection or forwards the error.
+   */
   async listClubs(req, res, next) {
     try {
       const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
@@ -105,6 +116,17 @@ export const clubController = {
   },
 
   // POST /api/clubs (campus_admin or club_officer only)
+  /**
+   * Creates a club for a signed-in campus administrator or club officer.
+   * Only administrators can choose a different officer or an initial status.
+   *
+   * @function createClub
+   * @async
+   * @param {express.Request} req - Authenticated request with the club name and optional details.
+   * @param {express.Response} res - Response used for creation or validation errors.
+   * @param {express.NextFunction} next - Receives unexpected storage errors.
+   * @returns {Promise<express.Response|void>} Sends the club with HTTP 201, a 4xx response for invalid or unauthorized requests, or forwards an error.
+   */
   async createClub(req, res, next) {
     try {
       if (!req.user) {
