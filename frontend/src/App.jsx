@@ -6,6 +6,7 @@ import AppShell from './layouts/AppShell.jsx';
 import FeatureCard from './components/FeatureCard.jsx';
 import F10Workspace from './features/communication/F10Workspace.jsx';
 import F11Workspace from './features/feedback/F11Workspace.jsx';
+import VenueBooking from './features/VenueBooking.jsx';
 import { modules } from './data/modules.js';
 
 import LoginPage from './pages/LoginPage.jsx';
@@ -65,6 +66,11 @@ function EventWorkspaceRoute({ view }) {
       <EventWorkspace view={view} session={session} />
     </AppShell>
   );
+}
+
+function VenueBookingRoute() {
+  const [session] = useState(readSession);
+  return <VenueBooking session={session} apiBase={apiBase} />;
 }
 
 function HomePage() {
@@ -134,6 +140,7 @@ function HomePage() {
           <Link to="/register">Register</Link>
           <Link to="/clubs">Browse Clubs</Link>
           <Link to="/events">Browse Events</Link>
+          <Link to="/venues">Venue booking</Link>
           <a href="/#communication">Announcements</a>
           <a href="/#feedback">Feedback</a>
         </div>
@@ -240,6 +247,7 @@ function AppContent() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/clubs" element={<ClubsPage />} />
+        <Route path="/venues" element={<VenueBookingRoute />} />
 
         <Route
           path="/events"
