@@ -5,6 +5,7 @@ import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import AppShell from './layouts/AppShell.jsx';
 import FeatureCard from './components/FeatureCard.jsx';
 import F10Workspace from './features/communication/F10Workspace.jsx';
+import F11Workspace from './features/feedback/F11Workspace.jsx';
 import { modules } from './data/modules.js';
 
 import LoginPage from './pages/LoginPage.jsx';
@@ -67,6 +68,7 @@ function EventWorkspaceRoute({ view }) {
 }
 
 function HomePage() {
+  const [session] = useState(readSession);
   const [api, setApi] = useState({
     type: 'loading',
     message: 'Checking API...',
@@ -133,6 +135,7 @@ function HomePage() {
           <Link to="/clubs">Browse Clubs</Link>
           <Link to="/events">Browse Events</Link>
           <a href="/#communication">Announcements</a>
+          <a href="/#feedback">Feedback</a>
         </div>
 
         <span className="hero-note">
@@ -194,6 +197,7 @@ function HomePage() {
       </section>
 
       <F10Workspace />
+      <F11Workspace session={session} />
 
       <section id="setup" className="setup">
         <span className="eyebrow">DEVELOPER SETUP</span>

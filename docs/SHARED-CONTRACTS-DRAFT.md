@@ -26,6 +26,13 @@ This document is not an approved schema. Discuss and approve it in Discord befor
 
 Protected F10 routes use F01's bearer JWT authentication. The backend derives identity and role from `req.user`; client-controlled identity headers are not accepted.
 
+- `GET /api/feedback/eligible-events` → HTTP 200, completed events attended by the current user; requires bearer authentication
+- `GET /api/feedback/events/:eventId` → HTTP 200, completed event feedback summary and reviews
+- `POST /api/feedback/events/:eventId` → HTTP 201, creates or updates an attendee's feedback; requires bearer authentication
+- `DELETE /api/feedback/:feedbackId` → HTTP 200, removes the review for its author or a campus administrator; requires bearer authentication
+
+Protected F11 routes use F01's bearer JWT authentication and database-backed roles. Saving feedback requires an attendance record for a completed event. Ratings must be JSON integers from 1 to 5.
+
 ## Items to finalize before feature development
 1. Shared PostgreSQL schema: users, clubs, members, events, proposals, registrations, attendance, venues, shifts, notifications, feedback.
 2. Primary-key types, foreign-key relationships, enum/status values, migrations.
