@@ -2,6 +2,16 @@ import { createEventModel } from '../models/eventModel.js';
 import { isUuid, validateDateRange, validateId, validatePage, validateProposal, validateReview } from '../validation/eventValidation.js';
 import { EventError } from './eventError.js';
 
+/**
+ * Checks that the event workflow received an authenticated actor and, when specified, the required role.
+ *
+ * @param {object} actor - Authenticated user supplied by event middleware.
+ * @param {string} actor.id - Actor UUID.
+ * @param {string} actor.role - Actor's current role.
+ * @param {string} [role] - Required role for the operation.
+ * @returns {string} The actor UUID normalized to lowercase.
+ * @throws {EventError} HTTP 401 for an invalid identity or 403 for a role mismatch.
+ */
 export function requireEventActor(actor, role) {
   if (!isUuid(actor?.id)) throw new EventError(401, 'UNAUTHENTICATED', 'Verified sign-in is required.');
   if (role && actor.role !== role) throw new EventError(403, 'FORBIDDEN', 'You do not have access to this operation.');
@@ -20,6 +30,14 @@ function requireStatus(event, allowed) {
   }
 }
 
+/**
+ * Creates the proposal workflow backed by a transactional event model.
+ * Officers manage proposals for their assigned clubs. Administrators review pending proposals
+ * using the current submission version to prevent stale decisions.
+ *
+ * @param {object} [model] - Event persistence adapter. Defaults to the PostgreSQL event model.
+ * @returns {object} Service methods for creating, editing, submitting, reviewing, and listing proposals.
+ */
 export function createEventService(model = createEventModel()) {
   async function changeProposal(actor, eventId, role, action) {
     const userId = requireEventActor(actor, role);
@@ -69,6 +87,19 @@ export function createEventService(model = createEventModel()) {
       });
     },
 
+    /**
+     * Records an administrator decision on a pending proposal and checks the submission version while locked.
+     *
+     * @function review
+     * @param {object} actor - Authenticated campus administrator.
+     * @param {string} eventId - Proposal UUID.
+     * @param {object} body - Validated by the review workflow.
+     * @param {'approved'|'rejected'} body.decision - Review decision.
+     * @param {number} body.submission_version - Version displayed to the reviewer.
+     * @param {string} [body.review_note] - Required and nonblank for rejection.
+     * @returns {Promise<object>} The updated proposal row.
+     * @throws {EventError} Invalid identity, input, missing proposal, invalid state, or stale version. Transaction failures reject the promise.
+     */
     review(actor, eventId, body) {
       return changeProposal(actor, eventId, 'campus_admin', (client, event, reviewerId) => {
         requireStatus(event, ['pending']);

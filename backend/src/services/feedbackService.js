@@ -55,6 +55,15 @@ export async function listEligibleEvents(request) {
   return result.rows;
 }
 
+/**
+ * Returns the public review summary for a completed event, including count, average,
+ * per-star totals, and the newest 100 written or rating-only reviews.
+ *
+ * @async
+ * @param {string} eventId - Event UUID.
+ * @returns {Promise<{event: object, summary: object, reviews: object[]}>} Event identity, aggregate ratings, and reviews.
+ * @throws {ApiError} Invalid UUID, missing or non-completed event, or unavailable storage.
+ */
 export async function getFeedbackSummary(eventId) {
   const validEventId = requireUuid(eventId, 'eventId');
   const pool = requirePool();
@@ -88,6 +97,19 @@ export async function getFeedbackSummary(eventId) {
   return { event: event.rows[0], summary: summary.rows[0], reviews: reviews.rows };
 }
 
+/**
+ * Creates or updates the authenticated attendee's single review for a completed event.
+ * Eligibility requires a matching attendance record and is checked again in the write.
+ *
+ * @async
+ * @param {express.Request} request - Request with a verified user attached.
+ * @param {string} eventId - Completed event UUID.
+ * @param {object} [input] - Feedback input.
+ * @param {number} input.rating - Required integer from 1 through 5.
+ * @param {?string} [input.comment] - Optional review text, up to 2000 characters after trimming.
+ * @returns {Promise<object>} Saved review including its ID, author, rating, comment, and creation timestamp.
+ * @throws {ApiError} Invalid identity or input, missing attendance, incomplete event, changed eligibility, or unavailable storage.
+ */
 export async function saveFeedback(request, eventId, input = {}) {
   const userId = getUserId(request);
   const validEventId = requireUuid(eventId, 'eventId');

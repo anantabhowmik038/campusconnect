@@ -74,6 +74,20 @@ export async function listAnnouncements({ clubId, eventId }) {
   return result.rows;
 }
 
+/**
+ * Publishes to exactly one club or event. Only a campus administrator or the assigned club officer may publish.
+ * The announcement and notifications for approved club members or registered event attendees are saved in one transaction.
+ *
+ * @async
+ * @param {express.Request} request - Request with a verified user attached.
+ * @param {object} [input] - Announcement input.
+ * @param {string} input.title - Nonblank title of up to 200 characters.
+ * @param {string} input.content - Nonblank content of up to 5000 characters.
+ * @param {string} [input.clubId] - Club UUID when targeting a club.
+ * @param {string} [input.eventId] - Event UUID when targeting an event.
+ * @returns {Promise<object>} Announcement row with notified_user_count.
+ * @throws {ApiError} Invalid target or text, missing identity or target, insufficient permissions, or unavailable storage.
+ */
 export async function createAnnouncement(request, input = {}) {
   const createdBy = getUserId(request);
   const title = requireText(input.title, 'title', 200);
@@ -130,6 +144,16 @@ export async function createAnnouncement(request, input = {}) {
   }
 }
 
+/**
+ * Returns only notifications belonging to the authenticated user, newest first.
+ *
+ * @async
+ * @param {express.Request} request - Request with a verified user attached.
+ * @param {object} [filters] - Notification filter options.
+ * @param {boolean} [filters.unreadOnly=false] - Restrict the results to unread notifications.
+ * @returns {Promise<object[]>} Up to 100 notification records.
+ * @throws {ApiError} Missing or invalid user identity, or unavailable storage.
+ */
 export async function listNotifications(request, { unreadOnly = false } = {}) {
   const userId = getUserId(request);
   const pool = requirePool();

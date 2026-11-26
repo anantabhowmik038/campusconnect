@@ -1,6 +1,24 @@
 import { authService } from '../services/authService.js';
 import { userModel } from '../models/userModel.js';
 
+/**
+ * The identity made available by authentication middleware.
+ * @typedef {object} AuthenticatedUser
+ * @property {string} id - User UUID.
+ * @property {string} role - Current account role.
+ * @property {string} [email] - Account email, when supplied.
+ */
+
+/**
+ * Verifies a bearer JWT and attaches the authenticated user to the request.
+ * When the user lookup is available, the database supplies the role and inactive accounts are denied.
+ *
+ * @async
+ * @param {express.Request} req - Request carrying the bearer token.
+ * @param {express.Response} res - Response used for authentication failures.
+ * @param {express.NextFunction} next - Continues the middleware chain after verification.
+ * @returns {Promise<express.Response|void>} Continues on success, sends 401 for invalid or missing identity, or 403 for an inactive account.
+ */
 export async function verifyToken(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
@@ -51,6 +69,13 @@ export async function verifyToken(req, res, next) {
   }
 }
 
+/**
+ * Builds an authorization guard to follow authentication.
+ * The guard sends 401 when identity is absent and 403 when the role is outside the allowed list.
+ *
+ * @param {...string} allowedRoles - Role names permitted to call the route.
+ * @returns {express.RequestHandler} Express middleware that checks the authenticated request role.
+ */
 export function requireRole(...allowedRoles) {
   return (req, res, next) => {
     if (!req.user) {
