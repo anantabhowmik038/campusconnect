@@ -4,6 +4,7 @@ import { Routes, Route, Link, useLocation } from 'react-router-dom';
 
 import AppShell from './layouts/AppShell.jsx';
 import FeatureCard from './components/FeatureCard.jsx';
+import F10Workspace from './features/communication/F10Workspace.jsx';
 import { modules } from './data/modules.js';
 
 import LoginPage from './pages/LoginPage.jsx';
@@ -131,6 +132,7 @@ function HomePage() {
           <Link to="/register">Register</Link>
           <Link to="/clubs">Browse Clubs</Link>
           <Link to="/events">Browse Events</Link>
+          <a href="/#communication">Announcements</a>
         </div>
 
         <span className="hero-note">
@@ -190,6 +192,8 @@ function HomePage() {
           </section>
         ))}
       </section>
+
+      <F10Workspace />
 
       <section id="setup" className="setup">
         <span className="eyebrow">DEVELOPER SETUP</span>

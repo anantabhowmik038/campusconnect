@@ -5,6 +5,7 @@ import cors from 'cors';
 import healthRoutes from './routes/healthRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import clubRoutes from './routes/clubRoutes.js';
+import communicationRoutes from './routes/communicationRoutes.js';
 
 import { createEventRouter } from './routes/eventRoutes.js';
 import { createPublicEventRouter } from './routes/publicEventRoutes.js';
@@ -45,6 +46,7 @@ app.use(express.json({ limit: '1mb' }));
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/clubs', clubRoutes);
+app.use('/api', communicationRoutes);
 
 // Unknown routes
 app.use('/api', (_req, res) => {
